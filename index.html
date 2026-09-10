@@ -4,12 +4,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Экзамен АЭС</title>
+  
+  <!-- Telegram SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <!-- VK Mini Apps SDK -->
+  <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+
   <style>
     :root {
       --bg-color: var(--tg-theme-bg-color, #ffffff);
       --text-color: var(--tg-theme-text-color, #111111);
-      --btn-bg: var(--tg-theme-button-color, #1f4e79);
+      --btn-bg: var(--tg-theme-button-color, #2688eb);
       --btn-text: var(--tg-theme-button-text-color, #ffffff);
       --card-bg: var(--tg-theme-secondary-bg-color, #f4f6f9);
       --card-border: rgba(0, 0, 0, 0.08);
@@ -31,13 +36,6 @@
       font-size: 22px;
       margin-top: 5px;
       margin-bottom: 16px;
-      text-align: center;
-    }
-    h2 {
-      font-size: 18px;
-      margin-top: 15px;
-      margin-bottom: 10px;
-      color: var(--btn-bg);
       text-align: center;
     }
     .page { display: none; }
@@ -130,7 +128,7 @@
   <button class="btn" onclick="generateExam()">Сдать экзамен (20 вопросов)</button>
 </div>
 
-<!-- Экран выбора раздела -->
+<!-- Выбор раздела -->
 <div id="prepMenu" class="page">
   <h1>Выберите раздел</h1>
   <button class="btn btn-nav" onclick="showPage('home')">← На главную</button>
@@ -139,14 +137,14 @@
   <button class="btn" onclick="openSection('ПНАЭГ010', 'ПНАЭ Г-7-010-89 (Контроль сварных соединений и наплавки)')">ПНАЭ Г-7-010-89</button>
 </div>
 
-<!-- Экран вопросов выбранного раздела -->
+<!-- Просмотр вопросов раздела -->
 <div id="prep" class="page">
   <h1 id="prepTitle">Подготовка</h1>
   <button class="btn btn-nav" onclick="showPage('prepMenu')">← Назад к разделам</button>
   <div id="prepContent"></div>
 </div>
 
-<!-- Экран сдачи экзамена -->
+<!-- Экран экзамена -->
 <div id="exam" class="page">
   <h1>Сдать экзамен</h1>
   <button class="btn btn-nav" onclick="showPage('home')">← На главную</button>
@@ -156,15 +154,24 @@
 </div>
 
 <script>
+// 1. Инициализация Telegram WebApp (если открыто в Telegram)
 if (window.Telegram && window.Telegram.WebApp) {
   const tg = window.Telegram.WebApp;
   tg.ready();
   tg.expand();
 }
 
+// 2. Инициализация VK Bridge (если открыто в VK)
+if (typeof vkBridge !== 'undefined') {
+  vkBridge.send('VKWebAppInit');
+}
+
+// Универсальный виброотклик (Haptic) для обеих платформ
 function triggerHaptic() {
   if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
     window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+  } else if (typeof vkBridge !== 'undefined') {
+    vkBridge.send('VKWebAppTapticNotificationOccurred', { result: 'success' }).catch(() => {});
   }
 }
 
