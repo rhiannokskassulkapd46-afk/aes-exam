@@ -2,21 +2,19 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Экзамен АЭС</title>
-  
-  <!-- Telegram SDK -->
+
+  <!-- Telegram WebApp SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <!-- VK Mini Apps SDK -->
-  <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
 
   <style>
     :root {
-      --bg-color: var(--tg-theme-bg-color, #ffffff);
-      --text-color: var(--tg-theme-text-color, #111111);
-      --btn-bg: var(--tg-theme-button-color, #2688eb);
-      --btn-text: var(--tg-theme-button-text-color, #ffffff);
-      --card-bg: var(--tg-theme-secondary-bg-color, #f4f6f9);
+      --bg-color: #ffffff;
+      --text-color: #111111;
+      --btn-bg: #2688eb;
+      --btn-text: #ffffff;
+      --card-bg: #f4f6f9;
       --card-border: rgba(0, 0, 0, 0.08);
     }
     * {
@@ -27,6 +25,7 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
       margin: 0;
       padding: 16px;
+      padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
       background-color: var(--bg-color);
       color: var(--text-color);
       font-size: 15px;
@@ -38,10 +37,16 @@
       margin-bottom: 16px;
       text-align: center;
     }
+    h2 {
+      font-size: 18px;
+      margin-top: 15px;
+      margin-bottom: 10px;
+      color: var(--btn-bg);
+      text-align: center;
+    }
     .page { display: none; }
     .active { display: block; }
 
-    /* Кнопки с пружинящей анимацией */
     .btn, button {
       display: block;
       width: 100%;
@@ -128,7 +133,7 @@
   <button class="btn" onclick="generateExam()">Сдать экзамен (20 вопросов)</button>
 </div>
 
-<!-- Выбор раздела -->
+<!-- Меню разделов -->
 <div id="prepMenu" class="page">
   <h1>Выберите раздел</h1>
   <button class="btn btn-nav" onclick="showPage('home')">← На главную</button>
@@ -137,7 +142,7 @@
   <button class="btn" onclick="openSection('ПНАЭГ010', 'ПНАЭ Г-7-010-89 (Контроль сварных соединений и наплавки)')">ПНАЭ Г-7-010-89</button>
 </div>
 
-<!-- Просмотр вопросов раздела -->
+<!-- Экран вопросов раздела -->
 <div id="prep" class="page">
   <h1 id="prepTitle">Подготовка</h1>
   <button class="btn btn-nav" onclick="showPage('prepMenu')">← Назад к разделам</button>
@@ -154,24 +159,48 @@
 </div>
 
 <script>
-// 1. Инициализация Telegram WebApp (если открыто в Telegram)
+// Автономная отправка событий в VK Bridge без внешних CDN
+function sendVKEvent(handler, params) {
+  params = params || {};
+  try {
+    // Для мобильных приложений VK на Android
+    if (window.AndroidBridge && window.AndroidBridge[handler]) {
+      window.AndroidBridge[handler](JSON.stringify(params));
+      return;
+    }
+    // Для мобильных приложений VK на iOS
+    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers[handler]) {
+      window.webkit.messageHandlers[handler].postMessage(params);
+      return;
+    }
+    // Для веб-версий ВКонтакте (iframe)
+    if (window.parent && window.parent.postMessage) {
+      window.parent.postMessage({
+        type: 'VKWebAppFrameEvent',
+        data: { handler: handler, params: params }
+      }, '*');
+    }
+  } catch (e) {
+    console.warn('VK Bridge dispatch failed:', e);
+  }
+}
+
+// Принудительное мгновенное оповещение мобильного клиента VK о готовности
+sendVKEvent('VKWebAppInit');
+
+// Инициализация Telegram WebApp
 if (window.Telegram && window.Telegram.WebApp) {
   const tg = window.Telegram.WebApp;
   tg.ready();
   tg.expand();
 }
 
-// 2. Инициализация VK Bridge (если открыто в VK)
-if (typeof vkBridge !== 'undefined') {
-  vkBridge.send('VKWebAppInit');
-}
-
-// Универсальный виброотклик (Haptic) для обеих платформ
+// Универсальный отклик (Haptic Feedback)
 function triggerHaptic() {
   if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
     window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-  } else if (typeof vkBridge !== 'undefined') {
-    vkBridge.send('VKWebAppTapticNotificationOccurred', { result: 'success' }).catch(() => {});
+  } else {
+    sendVKEvent('VKWebAppTapticNotificationOccurred', { result: 'success' });
   }
 }
 
