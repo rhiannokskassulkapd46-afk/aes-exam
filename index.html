@@ -85,13 +85,6 @@
       margin-bottom: 12px;
       text-align: center;
     }
-    h2 {
-      font-size: 18px;
-      margin-top: 15px;
-      margin-bottom: 10px;
-      color: var(--btn-bg);
-      text-align: center;
-    }
     .page { display: none; }
     .active { display: block; }
     .btn, button {
@@ -329,6 +322,11 @@
       font-size: 15px;
       font-weight: bold;
     }
+    #stat-total {
+      color: var(--accent-stat);
+      font-size: 26px;
+      font-weight: bold;
+    }
     .progress-bar-bg {
       background: rgba(0,0,0,0.15);
       border-radius: 8px;
@@ -429,7 +427,7 @@
  
   <div class="setting-group" style="margin-top: 20px; text-align: center;">
     <div style="font-size: 14px; color: var(--subtext-color); margin-bottom: 6px;">Общий прогресс базы:</div>
-    <div style="font-size: 26px; font-weight: bold;" id="stat-total">0%</div>
+    <div id="stat-total">0%</div>
   </div>
  
   <button class="btn btn-reset" onclick="confirmResetStatistics()">Сбросить прогресс</button>
@@ -459,11 +457,11 @@
     <h3>Оформление экрана</h3>
     <div class="theme-options">
       <label>
-        <input type="radio" name="themeSelect" value="light" onchange="setTheme('light')">
+        <input type="radio" name="themeSelect" value="light" onchange="applyTheme('light')">
         <span>Светлая</span>
       </label>
       <label>
-        <input type="radio" name="themeSelect" value="dark" onchange="setTheme('dark')">
+        <input type="radio" name="themeSelect" value="dark" onchange="applyTheme('dark')">
         <span>Темная</span>
       </label>
     </div>
@@ -568,11 +566,7 @@ function applyTheme(theme) {
   document.body.setAttribute('data-theme', theme);
   var radio = document.querySelector('input[name="themeSelect"][value="' + theme + '"]');
   if (radio) radio.checked = true;
-  var totalStat = document.getElementById('stat-total');
-  if (totalStat) totalStat.style.color = theme === 'dark' ? '#dfa4ec' : '#0284c7';
 }
-
-function setTheme(theme) { applyTheme(theme); }
 
 function toggleHaptic(val) {
   hapticEnabled = val;
@@ -580,25 +574,22 @@ function toggleHaptic(val) {
   if (val) triggerHaptic('light');
 }
 
-// Мягкий и дифференцированный виброотклик
 function triggerHaptic(type) {
   if (!hapticEnabled) return;
   type = type || 'light';
 
-  // 1. Нативная вибрация Chrome / Android WebView (AppsGeyser)
   if (navigator.vibrate) {
     try {
       if (type === 'success') {
-        navigator.vibrate(22); // Мягкая одиночная вибрация (правильный ответ)
+        navigator.vibrate(22);
       } else if (type === 'error') {
-        navigator.vibrate([18, 45, 18, 45, 18]); // Мягкая тройная вибрация (неверный ответ)
+        navigator.vibrate([18, 45, 18, 45, 18]);
       } else {
-        navigator.vibrate(18); // Очень легкий одиночный клик (кнопки меню и навигация)
+        navigator.vibrate(18);
       }
     } catch (e) {}
   }
 
-  // 2. Telegram Mini App
   if (window.Telegram?.WebApp?.initData && window.Telegram.WebApp.HapticFeedback) {
     try {
       if (type === 'success') window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
@@ -608,7 +599,6 @@ function triggerHaptic(type) {
     } catch (e) {}
   }
 
-  // 3. VK Mini App
   var bridge = window.vkBridge?.default || window.vkBridge;
   if (bridge && typeof bridge.send === 'function' && typeof bridge.isWebView === 'function' && bridge.isWebView()) {
     try {
@@ -621,9 +611,7 @@ function triggerHaptic(type) {
   }
 }
 
-// Мгновенная реакция при касании кнопок интерфейса
 document.addEventListener('pointerdown', function(e) {
-  // Варианты в режиме подготовки обрабатываются раздельно через checkAnswer (success/error)
   if (e.target.closest('#prepContent label, #prepContent input')) {
     return;
   }
@@ -690,9 +678,7 @@ function openResultsPage() {
   var totalLearned = c1 + c2 + c3;
   var totalQuestions = t1 + t2 + t3;
   var totalPercent = Math.round(totalLearned / totalQuestions * 100);
-  var totalElem = document.getElementById('stat-total');
-  totalElem.innerText = totalLearned + ' / ' + totalQuestions + ' (' + totalPercent + '%)';
-  totalElem.style.color = currentTheme === 'dark' ? '#dfa4ec' : '#0284c7';
+  document.getElementById('stat-total').innerText = totalLearned + ' / ' + totalQuestions + ' (' + totalPercent + '%)';
   showPage('results');
 }
 
@@ -753,11 +739,11 @@ function checkAnswer(el, correct, selected, secKey, origIdx) {
   if (selected !== correct) {
     box.classList.remove('correct');
     box.classList.add('wrong');
-    triggerHaptic('error'); // Тройная мягкая вибрация
+    triggerHaptic('error');
   } else {
     box.classList.remove('wrong');
     box.classList.add('correct');
-    triggerHaptic('success'); // Одинарная мягкая вибрация
+    triggerHaptic('success');
     if (secKey && origIdx !== undefined) recordCorrectAnswer(secKey, origIdx);
   }
 }
@@ -891,7 +877,7 @@ function finishExam() {
        'Результат: ' + score + ' из ' + window.currentExam.length + ' (' + percent + '%)<br>' +
        (passed ? '🎉 Экзамен успешно сдан!' : '❌ Экзамен не сдан. Ниже показаны ошибки и правильные ответы.') +
        '<button class="btn" style="margin-top: 15px;" onclick="generateExam()">Попробовать снова</button>' +
-       '<button class="btn" style="background:var(--nav-btn-bg);" onclick="showPage(\'home\')">Вернуться на главную</button>' +
+       '<button class="btn btn-nav" onclick="showPage(\'home\')">Вернуться на главную</button>' +
      '</div>';
 
   window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
