@@ -1,0 +1,13 @@
+{
+  "name": "exam-aes",
+  "version": "1.0.0",
+  "description": "Экзамен АЭС - VK Mini App",
+  "main": "index.html",
+  "homepage": "./",
+  "scripts": {
+    "deploy": "vk-miniapps-deploy"
+  },
+  "devDependencies": {
+    "@vkontakte/vk-miniapps-deploy": "^1.0.0"
+  }
+}
